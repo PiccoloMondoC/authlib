@@ -17,7 +17,7 @@
 <h2>Usage</h2>
 <p>Firstly, you need to create a new authclient.Client instance.</p>
 
-	import "github.com/PiccoloMondoC/sky-auth/pkg/clientlib/authclient"
+	import "github.com/PiccoloMondoC/authclient"
 
 	client := authclient.NewClient(baseURL, logger)
 
