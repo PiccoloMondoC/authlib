@@ -49,6 +49,7 @@
 <p>This function verifies a JWT token and returns a boolean value indicating whether the token is valid.</p>
 
 <h2>Check User Authorization</h2>
+	
 	hasPermission, err := client.CheckUserAuthorization(context.Background(), token, "permission")
 	if err != nil {
 		// handle error
