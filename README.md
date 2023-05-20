@@ -21,13 +21,6 @@
 
 	client := authclient.NewClient(baseURL, logger)
 
-Where:
-<ul>
-  <li>baseURL is the base URL of the SkyAuth server.</li>
-  <li>logger is an instance of the logger from the "github.com/PiccoloMondoC/sky-auth/internal/logging" package.</li>
- </ul>
-<p>If you want to specify a custom http.Client, you can pass it as the third argument to the NewClient function.</p>
-
 <h2>Register a Service Account</h2>
 	
 	accountID, secret, err := client.RegisterServiceAccount(context.Background(), "account-name", []string{"role1", "role2"})
