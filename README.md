@@ -68,4 +68,4 @@
 
 <p>These are custom error types that contain the base error and the status code returned from the SkyAuth server.</p>
   <h2>Logging</h2>
-  <p>All the operations are logged using the provided logger.</p>
+  <p>All the operations are logged using the provided logger; not included here.</p>
