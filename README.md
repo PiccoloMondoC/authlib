@@ -60,10 +60,12 @@
 <h2>Error Handling</h2>
 <p>All the functions will return an error in case of a failure. The returned errors will be of the following types:</p>
 <ul>
-  <li>CheckUserAuthorizationError</li>
-  <li>VerifyUserAuthenticationError</li>
-  <li>AuthenticateServiceAccountError</li>
-  <liRegisterServiceAccountError</li>
+  <li><strong>CheckUserAuthorizationError</strong></li>
+  <li><strong>VerifyUserAuthenticationError</strong></li>
+  <li><strong>AuthenticateServiceAccountError</strong></li>
+  <li><strong>RegisterServiceAccountError</strong></li>
+</ul>
+
 <p>These are custom error types that contain the base error and the status code returned from the SkyAuth server.</p>
   <h2>Logging</h2>
   <p>All the operations are logged using the provided logger.</p>
