@@ -31,6 +31,7 @@
 <p>This function will register a new service account with the provided name and roles. The function will return the accountID and secret of the newly created account.</p>
 
 <h2>Authenticate a Service Account</h2>
+	
 	token, err := client.AuthenticateServiceAccount(context.Background(), accountID, secret)
 	if err != nil {
 		// handle error
