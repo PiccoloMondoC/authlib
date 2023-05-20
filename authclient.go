@@ -1,3 +1,4 @@
+// sky-auth/pkg/clientlib/authclient/authclient.go
 package authclient
 
 import (
@@ -6,17 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
-
-	"github.com/PiccoloMondoC/sky-auth/internal/logging"
 )
 
 // Client represents an HTTP client that can be used to send requests to the authentication server.
 type Client struct {
 	BaseURL    string
 	HttpClient *http.Client
-	Logger     *logging.Logger
 }
 
 // ServiceAccount represents the credentials needed to authenticate a service account.
@@ -99,7 +98,7 @@ func (e *RegisterServiceAccountError) Error() string {
 	return fmt.Sprintf("received non-200 response code (%d): %v", e.StatusCode, e.BaseError)
 }
 
-func NewClient(baseURL string, logger *logging.Logger, httpClient ...*http.Client) *Client {
+func NewClient(baseURL string, httpClient ...*http.Client) *Client {
 	var client *http.Client
 	if len(httpClient) > 0 {
 		client = httpClient[0]
@@ -112,26 +111,22 @@ func NewClient(baseURL string, logger *logging.Logger, httpClient ...*http.Clien
 	return &Client{
 		BaseURL:    baseURL,
 		HttpClient: client,
-		Logger:     logger,
 	}
 }
 
 // RegisterServiceAccount registers a new service account with the provided name and roles.
 func (c *Client) RegisterServiceAccount(ctx context.Context, name string, roles []string) (string, string, error) {
-	// Log using the custom log wrapper
-	logger := c.Logger.GetLoggerWithContextFromContext(ctx).WithFunctionName("RegisterServiceAccount")
-
 	// Prepare the request
 	registerRequest := RegisterServiceAccountRequest{Name: name, Roles: roles}
 	body, err := json.Marshal(registerRequest)
 	if err != nil {
-		logger.Error("Failed to marshal request body", "error", err)
+		log.Printf("Failed to marshal request body: %v", err)
 		return "", "", err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/service_account/register", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Error("Failed to create new request", "error", err)
+		log.Printf("Failed to create new request: %v", err)
 		return "", "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -139,7 +134,7 @@ func (c *Client) RegisterServiceAccount(ctx context.Context, name string, roles 
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		logger.Error("Failed to send request", "error", err)
+		log.Printf("Failed to send request: %v", err)
 		return "", "", err
 	}
 	defer resp.Body.Close()
@@ -150,37 +145,34 @@ func (c *Client) RegisterServiceAccount(ctx context.Context, name string, roles 
 			BaseError:  errors.New("received non-200 response code"),
 			StatusCode: resp.StatusCode,
 		}
-		logger.Error("Received non-200 response", "statusCode", resp.StatusCode, "error", err)
+		log.Printf("Received non-200 response. StatusCode: %v, Error: %v", resp.StatusCode, err)
 		return "", "", err
 	}
 
 	// Decode the response
 	var registerResponse RegisterServiceAccountResponse
 	if err := json.NewDecoder(resp.Body).Decode(&registerResponse); err != nil {
-		logger.Error("Failed to decode response", "error", err)
+		log.Printf("Failed to decode response: %v", err)
 		return "", "", err
 	}
 
-	logger.Info("Service account registered successfully", "id", registerResponse.ID)
+	log.Printf("Service account registered successfully, ID: %s", registerResponse.ID)
 	return registerResponse.ID, registerResponse.Secret, nil
 }
 
 // AuthenticateServiceAccount authenticates a service account and returns a JWT token.
 func (c *Client) AuthenticateServiceAccount(ctx context.Context, accountID, secretKey string) (string, error) {
-	// Log using the custom log wrapper
-	logger := c.Logger.GetLoggerWithContextFromContext(ctx).WithFunctionName("AuthenticateServiceAccount")
-
 	// Prepare the request
 	authRequest := AuthRequest{AccountID: accountID, SecretKey: secretKey}
 	body, err := json.Marshal(authRequest)
 	if err != nil {
-		logger.Error("Failed to marshal auth request", "error", err)
+		log.Printf("Failed to marshal auth request: %v", err)
 		return "", err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/service_account/authenticate", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Error("Failed to create new request", "error", err)
+		log.Printf("Failed to create new request: %v", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -188,7 +180,7 @@ func (c *Client) AuthenticateServiceAccount(ctx context.Context, accountID, secr
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		logger.Error("Failed to send request", "error", err)
+		log.Printf("Failed to send request: %v", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -199,14 +191,14 @@ func (c *Client) AuthenticateServiceAccount(ctx context.Context, accountID, secr
 			BaseError:  errors.New("received non-200 response code"),
 			StatusCode: resp.StatusCode,
 		}
-		logger.Error("Received non-200 response", "statusCode", resp.StatusCode, "error", err)
+		log.Printf("Received non-200 response. StatusCode: %v, Error: %v", resp.StatusCode, err)
 		return "", err
 	}
 
 	// Decode the response
 	var authResponse AuthResponse
 	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
-		logger.Error("Failed to decode response", "error", err)
+		log.Printf("Failed to decode response: %v", err)
 		return "", err
 	}
 
@@ -215,13 +207,10 @@ func (c *Client) AuthenticateServiceAccount(ctx context.Context, accountID, secr
 
 // VerifyUserAuthentication verifies a JWT token and returns a boolean value indicating whether the token is valid.
 func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bool, error) {
-	// Log using the custom log wrapper
-	logger := c.Logger.GetLoggerWithContextFromContext(ctx).WithFunctionName("VerifyUserAuthentication")
-
 	// Prepare the request
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/is-authenticated", nil)
 	if err != nil {
-		logger.Error("Failed to create new request", "error", err)
+		log.Printf("Failed to create new request: %v", err)
 		return false, err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -229,7 +218,7 @@ func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bo
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		logger.Error("Failed to send request", "error", err)
+		log.Printf("Failed to send request: %v", err)
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -240,7 +229,7 @@ func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bo
 			BaseError:  errors.New("received non-200 response code"),
 			StatusCode: resp.StatusCode,
 		}
-		logger.Error("Received non-200 response", "statusCode", resp.StatusCode, "error", err)
+		log.Printf("Received non-200 response. StatusCode: %v, Error: %v", resp.StatusCode, err)
 		return false, err
 	}
 
@@ -249,19 +238,17 @@ func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bo
 
 // CheckUserAuthorization verifies a user's authorization to perform a certain action.
 func (c *Client) CheckUserAuthorization(ctx context.Context, token, permission string) (bool, error) {
-	// Log using the custom log wrapper
-	logger := c.Logger.GetLoggerWithContextFromContext(ctx).WithFunctionName("CheckUserAuthorization")
 	// Prepare the request
 	permissionRequest := PermissionRequest{Token: token, Permissions: permission}
 	body, err := json.Marshal(permissionRequest)
 	if err != nil {
-		logger.Error("Failed to marshal permissionRequest", "error", err)
+		log.Printf("Failed to marshal permissionRequest: %v", err)
 		return false, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/check-permission", bytes.NewBuffer(body))
 	if err != nil {
-		logger.Error("Failed to create new request", "error", err)
+		log.Printf("Failed to create new request: %v", err)
 		return false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -269,7 +256,7 @@ func (c *Client) CheckUserAuthorization(ctx context.Context, token, permission s
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		logger.Error("Failed to send request", "error", err)
+		log.Printf("Failed to send request: %v", err)
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -280,14 +267,14 @@ func (c *Client) CheckUserAuthorization(ctx context.Context, token, permission s
 			BaseError:  errors.New("received non-200 response code"),
 			StatusCode: resp.StatusCode,
 		}
-		logger.Error("Received non-200 response", "statusCode", resp.StatusCode, "error", err)
+		log.Printf("Received non-200 response. StatusCode: %v, Error: %v", resp.StatusCode, err)
 		return false, err
 	}
 
 	// Decode the response
 	var permissionResponse PermissionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&permissionResponse); err != nil {
-		logger.Error("Failed to decode response", "error", err)
+		log.Printf("Failed to decode response: %v", err)
 		return false, err
 	}
 
