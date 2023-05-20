@@ -11,6 +11,7 @@
 <p>This library is designed to be simple, robust, and easily integratable into any Go project that needs to interact with the Sky-Auth Authentication server. It emphasizes on ease of use and readability while maintaining strong typing and error handling typical in Go codebases.</p>
 
 <h2>Installation</h2>
+	
 	go get github.com/PiccoloMondoC/sky-auth/pkg/clientlib/authclient
 
 <h2>Usage</h2>
@@ -28,6 +29,7 @@ Where:
 <p>If you want to specify a custom http.Client, you can pass it as the third argument to the NewClient function.</p>
 
 <h2>Register a Service Account</h2>
+	
 	accountID, secret, err := client.RegisterServiceAccount(context.Background(), "account-name", []string{"role1", "role2"})
 	if err != nil {
 		// handle error
