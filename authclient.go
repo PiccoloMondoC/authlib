@@ -1,4 +1,3 @@
-// sky-auth/pkg/clientlib/authclient/authclient.go
 package authclient
 
 import (
