@@ -12,7 +12,7 @@
 
 <h2>Installation</h2>
 	
-	go get github.com/PiccoloMondoC/sky-auth/pkg/clientlib/authclient
+	go get github.com/PiccoloMondoC/authclient
 
 <h2>Usage</h2>
 <p>Firstly, you need to create a new authclient.Client instance.</p>
