@@ -9,11 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
-
-	"github.com/PiccoloMondoC/sky-common/jwt"
-	validation "github.com/go-ozzo/ozzo-validation"
 )
 
 // Client represents an HTTP client that can be used to send requests to the authentication server.
@@ -362,33 +358,4 @@ func (c *Client) GetTokenForUser(ctx context.Context, account Account) (string, 
 	}
 
 	return authResp.Token, nil
-}
-
-// GetUserIDFromToken extracts the User ID from the given token.
-func (c *Client) GetUserIDFromToken(ctx context.Context, token string) (string, error) {
-	// Validate input
-	err := validation.Validate(
-		&token,
-		validation.Required,
-		validation.By(jwt.IsValidJWT), // use custom JWT validation function
-	)
-	if err != nil {
-		return "", fmt.Errorf("invalid input data: %w", err)
-	}
-
-	// Extract user ID from the token
-	userID, err := jwt.GetSubject(token)
-	if err != nil {
-		return "", err
-	}
-
-	// In the current system, the subject contains account type and user id separated by an underscore.
-	// So, let's split the userID variable and return the user id part.
-	userIDParts := strings.Split(userID, "_")
-	if len(userIDParts) != 2 {
-		return "", fmt.Errorf("invalid subject format in token")
-	}
-
-	// return the user id part
-	return userIDParts[1], nil
 }
