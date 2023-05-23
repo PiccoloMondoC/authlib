@@ -1,3 +1,4 @@
+// sky-auth/pkg/clientlib/authclient/authclient.go
 package authclient
 
 import (
@@ -8,7 +9,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/PiccoloMondoC/sky-auth/internal/jwt"
+	validation "github.com/go-ozzo/ozzo-validation"
 )
 
 // Client represents an HTTP client that can be used to send requests to the authentication server.
@@ -17,10 +22,22 @@ type Client struct {
 	HttpClient *http.Client
 }
 
+// User represents the credentials needed to authenticate a user.
+type User struct {
+	ID       string `json:"id"`
+	Password string `json:"password"`
+}
+
 // ServiceAccount represents the credentials needed to authenticate a service account.
 type ServiceAccount struct {
 	AccountID string `json:"account_id"`
 	SecretKey string `json:"secret_key"`
+}
+
+// Account represents an entity (user or service account) that can authenticate.
+type Account interface {
+	GetAccountID() string
+	GetCredentials() string
 }
 
 // AuthResponse represents the JSON response returned from the authentication server after successful authentication.
@@ -61,6 +78,26 @@ type RegisterServiceAccountResponse struct {
 type CheckUserAuthorizationError struct {
 	BaseError  error
 	StatusCode int
+}
+
+// GetAccountID returns the ID of the user.
+func (u User) GetAccountID() string {
+	return u.ID
+}
+
+// GetCredentials returns the password of the user.
+func (u User) GetCredentials() string {
+	return u.Password
+}
+
+// GetAccountID returns the ID of the service account.
+func (sa ServiceAccount) GetAccountID() string {
+	return sa.AccountID
+}
+
+// GetCredentials returns the secret key of the service account.
+func (sa ServiceAccount) GetCredentials() string {
+	return sa.SecretKey
 }
 
 func (e *CheckUserAuthorizationError) Error() string {
@@ -278,4 +315,80 @@ func (c *Client) CheckUserAuthorization(ctx context.Context, token, permission s
 	}
 
 	return permissionResponse.HasPermission, nil
+}
+
+// GetTokenForUser sends a request to the auth server to get a token for an account (user or service account).
+func (c *Client) GetTokenForUser(ctx context.Context, account Account) (string, error) {
+	// Create the JSON request body
+	reqBody := AuthRequest{
+		AccountID: account.GetAccountID(),
+		SecretKey: account.GetCredentials(), // Adjusted to use GetCredentials
+	}
+
+	// Marshal the request body to JSON
+	reqBodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/tokens", bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		return "", fmt.Errorf("failed to create new request: %w", err)
+	}
+
+	// Set the content type header
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the HTTP request
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the request was successful
+	if resp.StatusCode != http.StatusOK {
+		return "", &AuthenticateServiceAccountError{
+			BaseError:  errors.New("failed to authenticate account"),
+			StatusCode: resp.StatusCode,
+		}
+	}
+
+	// Decode the response body
+	var authResp AuthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&authResp); err != nil {
+		return "", fmt.Errorf("failed to decode response body: %w", err)
+	}
+
+	return authResp.Token, nil
+}
+
+// GetUserIDFromToken extracts the User ID from the given token.
+func (c *Client) GetUserIDFromToken(ctx context.Context, token string) (string, error) {
+	// Validate input
+	err := validation.Validate(
+		&token,
+		validation.Required,
+		validation.By(jwt.IsValidJWT), // use custom JWT validation function
+	)
+	if err != nil {
+		return "", fmt.Errorf("invalid input data: %w", err)
+	}
+
+	// Extract user ID from the token
+	userID, err := jwt.GetSubject(token)
+	if err != nil {
+		return "", err
+	}
+
+	// In the current system, the subject contains account type and user id separated by an underscore.
+	// So, let's split the userID variable and return the user id part.
+	userIDParts := strings.Split(userID, "_")
+	if len(userIDParts) != 2 {
+		return "", fmt.Errorf("invalid subject format in token")
+	}
+
+	// return the user id part
+	return userIDParts[1], nil
 }
