@@ -1,3 +1,4 @@
+// sky-auth/pkg/clientlib/authclient/authclient.go
 package authclient
 
 import (
@@ -11,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PiccoloMondoC/sky-auth/internal/jwt"
+	"github.com/PiccoloMondoC/sky-common/jwt"
 	validation "github.com/go-ozzo/ozzo-validation"
 )
 
@@ -390,4 +391,15 @@ func (c *Client) GetUserIDFromToken(ctx context.Context, token string) (string, 
 
 	// return the user id part
 	return userIDParts[1], nil
+}
+
+func (ac *Client) HasPermission(ctx context.Context, userID, permission string) (bool, error) {
+	// Implement your logic here.
+	// The implementation might involve checking the user's permissions against the provided permission string.
+	// If the user has the required permission, return true, nil
+	// If the user doesn't have the required permission or if there's an error, return false and the error
+
+	var permissionResponse PermissionResponse
+
+	return permissionResponse.HasPermission, nil
 }
