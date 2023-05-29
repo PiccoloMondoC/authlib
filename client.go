@@ -1,3 +1,4 @@
+// sky-auth/pkg/clientlib/authclient/authclient.go
 package authclient
 
 import (
@@ -15,6 +16,7 @@ import (
 type Client struct {
 	BaseURL    string
 	HttpClient *http.Client
+	ApiKey     string
 }
 
 // User represents the credentials needed to authenticate a user.
@@ -129,7 +131,7 @@ func (e *RegisterServiceAccountError) Error() string {
 	return fmt.Sprintf("received non-200 response code (%d): %v", e.StatusCode, e.BaseError)
 }
 
-func NewClient(baseURL string, httpClient ...*http.Client) *Client {
+func NewClient(baseURL string, apiKey string, httpClient ...*http.Client) *Client {
 	var client *http.Client
 	if len(httpClient) > 0 {
 		client = httpClient[0]
@@ -142,6 +144,7 @@ func NewClient(baseURL string, httpClient ...*http.Client) *Client {
 	return &Client{
 		BaseURL:    baseURL,
 		HttpClient: client,
+		ApiKey:     apiKey,
 	}
 }
 
@@ -161,6 +164,7 @@ func (c *Client) RegisterServiceAccount(ctx context.Context, name string, roles 
 		return "", "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.ApiKey)
 
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
@@ -207,6 +211,7 @@ func (c *Client) AuthenticateServiceAccount(ctx context.Context, accountID, secr
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.ApiKey)
 
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
@@ -245,6 +250,7 @@ func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bo
 		return false, err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("X-API-Key", c.ApiKey)
 
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
@@ -283,6 +289,7 @@ func (c *Client) CheckUserAuthorization(ctx context.Context, token, permission s
 		return false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.ApiKey)
 
 	// Send the request
 	resp, err := c.HttpClient.Do(req)
@@ -332,8 +339,9 @@ func (c *Client) GetTokenForUser(ctx context.Context, account Account) (string, 
 		return "", fmt.Errorf("failed to create new request: %w", err)
 	}
 
-	// Set the content type header
+	// Set the headers
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.ApiKey)
 
 	// Send the HTTP request
 	resp, err := c.HttpClient.Do(req)
