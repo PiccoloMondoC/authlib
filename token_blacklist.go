@@ -1,4 +1,3 @@
-// sky-auth/pkg/clientlib/authlib/token_blacklist.go
 package authlib
 
 import "time"
