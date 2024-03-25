@@ -1,4 +1,3 @@
-// sky-auth/pkg/clientlib/authlib/service_permissions.go
 package authlib
 
 func (c *Client) CreateServicePermission() {}
