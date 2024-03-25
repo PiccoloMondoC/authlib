@@ -1,5 +1,5 @@
-# AuthClient Library
-<p>The AuthClient Client Library is a Go package designed to provide a streamlined and efficient way to interact with the Sky-Auth Authentication server. This package provides an HTTP client along with associated methods and data types to handle the following functionalities:</p>
+# AuthLib Library
+<p>The AuthLib Client Library is a Go package designed to provide a streamlined and efficient way to interact with the Sky-Auth Authentication server. This package provides an HTTP client along with associated methods and data types to handle the following functionalities:</p>
 <ol>
   <li><strong>Service Account Registration:</strong> It provides the ability to register new service accounts. A service account is created with a specified name and a set of roles.</li>
   <li><strong>Service Account Authentication:</strong> The library can authenticate a service account using the account ID and secret key, returning a JWT token upon successful authentication.</li>
@@ -12,14 +12,14 @@
 
 <h2>Installation</h2>
 	
-	go get github.com/PiccoloMondoC/authclient
+	go get github.com/PiccoloMondoC/authlib
 
 <h2>Usage</h2>
-<p>Firstly, you need to create a new authclient.Client instance.</p>
+<p>Firstly, you need to create a new authlib.Client instance.</p>
 
-	import "github.com/PiccoloMondoC/authclient"
+	import "github.com/PiccoloMondoC/authlib"
 
-	client := authclient.NewClient(baseURL, logger)
+	client := authlib.NewClient(baseURL, logger)
 
 <h2>Register a Service Account</h2>
 	
