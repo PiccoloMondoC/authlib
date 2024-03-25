@@ -1,4 +1,4 @@
-package authclient
+package authlib
 
 import (
 	"bytes"
