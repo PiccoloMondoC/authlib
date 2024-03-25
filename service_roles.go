@@ -1,4 +1,3 @@
-// sky-auth/pkg/clientlib/authlib/service_roles.go
 package authlib
 
 import (
