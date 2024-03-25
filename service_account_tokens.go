@@ -1,4 +1,3 @@
-// sky-auth/pkg/clientlib/authlib/service_account_tokens.go
 package authlib
 
 import (
