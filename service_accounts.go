@@ -30,6 +30,7 @@ type RequestServiceAccountRegistrationInput struct {
 	ServiceName    string `json:"service_name"`
 	ApiKey         string `json:"api_key,omitempty"`         // Optional, if you want to include an ApiKey
 	BootstrapToken string `json:"bootstrap_token,omitempty"` // Optional, if you want to include a BootstrapToken
+	Roles          []string `json:"roles"`
 }
 
 func (c *Client) RequestServiceAccountRegistration(ctx context.Context, input RequestServiceAccountRegistrationInput) (*ServiceAccount, error) {
