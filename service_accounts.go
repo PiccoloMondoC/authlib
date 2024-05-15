@@ -77,6 +77,66 @@ func (c *Client) RequestServiceAccountRegistration(ctx context.Context, input Re
 	return &newServiceAccount, nil
 }
 
+type RegisterServiceAccountInput struct {
+	ServiceName    string `json:"service_name"`
+	ApiKey         string `json:"api_key,omitempty"`
+	BootstrapToken string `json:"bootstrap_token,omitempty"`
+}
+
+func (c *Client) RegisterServiceAccount(ctx context.Context, input RegisterServiceAccountInput) (*ServiceAccount, error) {
+	// Convert RegisterServiceAccountInput to RequestServiceAccountRegistrationInput
+	requestInput := RequestServiceAccountRegistrationInput(input)
+
+	// Call RequestServiceAccountRegistration
+	serviceAccount, err := c.RequestServiceAccountRegistration(ctx, requestInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register service account: %w", err)
+	}
+
+	return serviceAccount, nil
+}
+
+func (c *Client) AuthenticateServiceAccount(ctx context.Context, serviceAccountID uuid.UUID, token string) (bool, error) {
+	// Construct the request body
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"id":    serviceAccountID,
+		"token": token,
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to encode request body: %w", err)
+	}
+
+	// Construct the HTTP request
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/authenticate-service-account", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return false, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.ApiKey))
+
+	// Send the request
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK {
+		return false, errors.New("failed to authenticate service account")
+	}
+
+	// Decode the response body
+	var authResponse struct {
+		Authenticated bool `json:"authenticated"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
+		return false, fmt.Errorf("failed to decode response body: %w", err)
+	}
+
+	return authResponse.Authenticated, nil
+}
+
 func (c *Client) GetServiceAccountByID(ctx context.Context, serviceAccountID uuid.UUID) (*ServiceAccount, error) {
 	// Construct the URL with the service account ID
 	url := fmt.Sprintf("%s/service-accounts/%s", c.BaseURL, serviceAccountID.String())
