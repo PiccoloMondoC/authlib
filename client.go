@@ -34,8 +34,10 @@ func NewClient(baseURL string, apiKey string, httpClient ...*http.Client) *Clien
 	}
 }
 
+// VerifyUserAuthentication verifies the user authentication
 func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bool, error) {
-	// Create a new request to verify user authentication
+	// Implementation of VerifyUserAuthentication
+	// Ensure this function exists and is correct
 	verifyURL := fmt.Sprintf("%s/verify", c.BaseURL)
 	reqBody, err := json.Marshal(map[string]string{"token": token})
 	if err != nil {
@@ -49,19 +51,16 @@ func (c *Client) VerifyUserAuthentication(ctx context.Context, token string) (bo
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.ApiKey))
 
-	// Send the request
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Check the response status code. If not 200, return an error.
 	if resp.StatusCode != http.StatusOK {
 		return false, errors.New("failed to verify user authentication")
 	}
 
-	// Decode the response body
 	var authResponse struct {
 		Authenticated bool `json:"authenticated"`
 	}
