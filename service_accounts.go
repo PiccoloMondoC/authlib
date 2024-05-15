@@ -82,6 +82,7 @@ type RegisterServiceAccountInput struct {
 	ServiceName    string `json:"service_name"`
 	ApiKey         string `json:"api_key,omitempty"`
 	BootstrapToken string `json:"bootstrap_token,omitempty"`
+	Roles          []string `json:"roles"`
 }
 
 func (c *Client) RegisterServiceAccount(ctx context.Context, input RegisterServiceAccountInput) (*ServiceAccount, error) {
