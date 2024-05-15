@@ -279,3 +279,45 @@ func (c *Client) ListServiceAccountTokens(ctx context.Context, input ListService
 
 	return issuedTokens, nil
 }
+
+// RetrieveServiceAccountToken retrieves or refreshes a service account token
+func (c *Client) RetrieveServiceAccountToken(ctx context.Context, serviceAccountID uuid.UUID) (*TokenDetails, error) {
+	// Check if the token exists and is valid
+	verified, err := c.VerifyServiceAccountToken(ctx, VerifyServiceAccountTokenInput{
+		ServiceAccountTokenID: serviceAccountID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify token: %w", err)
+	}
+
+	// If the token is verified, return it
+	if verified {
+		refreshToken := "" // Fill in with the refresh token
+
+		// Refresh the token
+		refreshedToken, err := c.RefreshServiceAccountToken(ctx, RefreshServiceAccountTokenInput{
+			ServiceAccountTokenID: serviceAccountID,
+			RefreshToken:          refreshToken,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to refresh token: %w", err)
+		}
+		return refreshedToken, nil
+	}
+
+	// Token does not exist or is invalid, issue a new token
+	issuedToken, err := c.IssueServiceAccountToken(ctx, IssueServiceAccountTokenInput{
+		ServiceAccountID: serviceAccountID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to issue token: %w", err)
+	}
+
+	// If token issuance is successful, return the details
+	return &TokenDetails{
+		AccessToken:  issuedToken.Token,
+		RefreshToken: issuedToken.RefreshToken,
+		AtExpires:    issuedToken.TokenExpiresAt.Unix(),
+		RtExpires:    issuedToken.RefreshTokenExpiresAt.Unix(),
+	}, nil
+}
